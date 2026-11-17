@@ -15,3 +15,6 @@ ipykernel>=6.29.0
 
 # Testing & Verification
 pytest>=8.0.0
+
+# Web Application & Dashboard
+streamlit>=1.40.0
