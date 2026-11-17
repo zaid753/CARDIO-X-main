@@ -1,0 +1,122 @@
+{
+  "dataset": "NHANES 2021-2023",
+  "model_tier": "Model 1: Remote Screening Engine (Core 24)",
+  "target_name": "TARGET_HYPERCHOL",
+  "target_definition": "total_cholesterol_mg_dl >= 240 OR cholesterol_medication == 1",
+  "selected_estimator": "Gradient_Boosting",
+  "model_selection_status": "selected_implementation_candidate",
+  "model_selection_rationale": "HistGradientBoosting was selected as the non-linear implementation candidate. In 5-fold cross-validation on training data, Random Forest (ROC-AUC: 0.8137 +/- 0.0082), Logistic Regression (0.8122 +/- 0.0084), and Gradient Boosting (0.8110 +/- 0.0059) demonstrated comparable discrimination within one fold standard deviation. On the held-out test set, Logistic Regression achieved higher test ROC-AUC (0.8349 vs 0.8205). Gradient Boosting is preserved as the non-linear tree implementation candidate without asserting that it is objectively the best model.",
+  "feature_count": 24,
+  "feature_names": [
+    "age_years",
+    "sex",
+    "race_ethnicity",
+    "education_level",
+    "family_income_poverty_ratio",
+    "bmi_kg_m2",
+    "waist_circumference_cm",
+    "waist_to_height_ratio",
+    "weight_change_1yr_kg",
+    "avg_systolic_bp_mmhg",
+    "avg_diastolic_bp_mmhg",
+    "pulse_pressure_mmhg",
+    "avg_pulse_bpm",
+    "bp_medication",
+    "smoking_status",
+    "total_ltp_met_minutes_week",
+    "sedentary_minutes_day",
+    "alcohol_drinks_per_week",
+    "sleep_hours_weekday",
+    "diabetes_diagnosed",
+    "general_health",
+    "phq9_score",
+    "coronary_heart_disease",
+    "stroke"
+  ],
+  "feature_composition_summary": "Non-laboratory predictor battery comprising demographics (5), anthropometrics (4), vitals and hemodynamics (5), lifestyle habits (5), and selected medical history variables (diagnosed diabetes, general health score, PHQ-9 depression score, coronary heart disease history, and stroke history).",
+  "selected_decision_threshold": 0.4600000000000001,
+  "threshold_selection_methodology": "Derived strictly from training-set 5-fold cross-validation out-of-fold predictions targeting sensitivity >= 80% with specificity >= 20%. The held-out test set was completely quarantined during threshold selection.",
+  "oof_metrics_at_selected_threshold": {
+    "threshold": 0.46,
+    "accuracy": 0.7168,
+    "sensitivity": 0.8048,
+    "specificity": 0.6628,
+    "precision": 0.5944,
+    "f1_score": 0.6838,
+    "roc_auc": 0.8104,
+    "pr_auc": 0.6984,
+    "brier_score": 0.1765,
+    "confusion_matrix": {
+      "TN": 1897,
+      "FP": 965,
+      "FN": 343,
+      "TP": 1414
+    },
+    "sample_weight_used": false
+  },
+  "cv_fold_summary": {
+    "roc_auc_mean": 0.811,
+    "roc_auc_std": 0.0059,
+    "pr_auc_mean": 0.7023,
+    "pr_auc_std": 0.0135,
+    "brier_mean": 0.1765,
+    "brier_std": 0.0051
+  },
+  "test_metrics_default_0_50": {
+    "threshold": 0.5,
+    "accuracy": 0.7368,
+    "sensitivity": 0.754,
+    "specificity": 0.7263,
+    "precision": 0.6281,
+    "f1_score": 0.6853,
+    "roc_auc": 0.8205,
+    "pr_auc": 0.7159,
+    "brier_score": 0.1701,
+    "confusion_matrix": {
+      "TN": 520,
+      "FP": 196,
+      "FN": 108,
+      "TP": 331
+    },
+    "sample_weight_used": false
+  },
+  "test_metrics_at_selected_threshold": {
+    "threshold": 0.46,
+    "accuracy": 0.7212,
+    "sensitivity": 0.779,
+    "specificity": 0.6858,
+    "precision": 0.6032,
+    "f1_score": 0.6799,
+    "roc_auc": 0.8205,
+    "pr_auc": 0.7159,
+    "brier_score": 0.1701,
+    "confusion_matrix": {
+      "TN": 491,
+      "FP": 225,
+      "FN": 97,
+      "TP": 342
+    },
+    "sample_weight_used": false
+  },
+  "survey_weighted_test_metrics": {
+    "threshold": 0.46,
+    "accuracy": 0.7378,
+    "sensitivity": 0.6761,
+    "specificity": 0.7669,
+    "precision": 0.5777,
+    "f1_score": 0.623,
+    "roc_auc": 0.8242,
+    "pr_auc": 0.6807,
+    "brier_score": 0.159,
+    "confusion_matrix": {
+      "TN": 24618572,
+      "FP": 7482689,
+      "FN": 4904688,
+      "TP": 10235856
+    },
+    "sample_weight_used": true
+  },
+  "survey_weighting_note": "Survey-weighted metrics represent weighted test-sample estimates using NHANES MEC examination weights (survey_weight_mec_2yr / WTMEC2YR) adjusting for unequal selection probabilities and examination non-response. Weighting alone does not establish prospective clinical validity or external population generalizability.",
+  "training_date": "2026-11-17",
+  "random_state": 42
+}
