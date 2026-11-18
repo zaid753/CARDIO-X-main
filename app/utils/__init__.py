@@ -6,6 +6,11 @@ from app.utils.model_loader import (
     get_models_dir,
     ARTIFACT_KEYS,
 )
+from app.utils.screening_engine import (
+    NHANES_CORE_PREDICTORS,
+    validate_nhanes_inputs,
+    predict_nhanes_screening,
+)
 
 __all__ = [
     "load_model_metadata",
@@ -13,4 +18,7 @@ __all__ = [
     "verify_models_health",
     "get_models_dir",
     "ARTIFACT_KEYS",
+    "NHANES_CORE_PREDICTORS",
+    "validate_nhanes_inputs",
+    "predict_nhanes_screening",
 ]
