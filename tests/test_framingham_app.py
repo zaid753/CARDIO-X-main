@@ -254,12 +254,58 @@ class TestFraminghamInteractiveRisk(unittest.TestCase):
 
         self.assertAlmostEqual(result["operating_threshold"], expected_threshold, places=2)
 
-        if result["risk_score"] >= expected_threshold:
+        if result["screening_score"] >= expected_threshold:
             self.assertTrue(result["is_higher_signal"])
-            self.assertIn("Higher Risk Signal", result["classification_label"])
+            self.assertIn("Higher Model Screening Signal", result["classification_label"])
         else:
             self.assertFalse(result["is_higher_signal"])
-            self.assertIn("Lower Risk Signal", result["classification_label"])
+            self.assertIn("Lower Model Screening Signal", result["classification_label"])
+
+    def test_exact_categorical_encoding_aligns_with_training_preprocessing(self):
+        """Verify UI categorical mapping strictly matches src/preprocessing.py and Framingham encodings."""
+        # SEX: 0=Female, 1=Male
+        self.assertEqual(VALID_SEX_CHOICES["Female"], 0.0)
+        self.assertEqual(VALID_SEX_CHOICES["Male"], 1.0)
+
+        # educ: 1 to 4
+        self.assertEqual(VALID_EDUC_CHOICES["0–11 Years / Some High School"], 1.0)
+        self.assertEqual(VALID_EDUC_CHOICES["High School Diploma / GED"], 2.0)
+        self.assertEqual(VALID_EDUC_CHOICES["Some College / Vocational School"], 3.0)
+        self.assertEqual(VALID_EDUC_CHOICES["College Graduate or Higher"], 4.0)
+
+        # Binary columns 0.0 and 1.0 acceptance
+        for b_col in ["BPMEDS", "PREVHYP", "DIABETES", "CURSMOKE"]:
+            payload_0 = self.valid_payload.copy()
+            payload_0[b_col] = 0.0
+            if b_col == "CURSMOKE":
+                payload_0["CIGPDAY"] = 0.0
+            is_valid, _, df_0 = validate_framingham_inputs(payload_0)
+            self.assertTrue(is_valid)
+            self.assertEqual(df_0[b_col].iloc[0], 0.0)
+
+            payload_1 = self.valid_payload.copy()
+            payload_1[b_col] = 1.0
+            if b_col == "CURSMOKE":
+                payload_1["CIGPDAY"] = 20.0
+            is_valid, _, df_1 = validate_framingham_inputs(payload_1)
+            self.assertTrue(is_valid)
+            self.assertEqual(df_1[b_col].iloc[0], 1.0)
+
+    def test_model_score_terminology_and_disclaimer_against_calibrated_probability(self):
+        """Verify model output is framed as a screening score without claiming calibrated clinical absolute probability."""
+        is_valid, _, df_val = validate_framingham_inputs(self.valid_payload)
+        self.assertTrue(is_valid)
+
+        result = predict_framingham_risk(df_val)
+        self.assertIn("screening_score", result)
+        self.assertIn("screening_score_pct", result)
+        self.assertIn("classification_label", result)
+        self.assertIn("Model Screening Signal", result["classification_label"])
+
+        # Check classifier class_weight='balanced'
+        pipeline = load_pipeline("framingham_risk")
+        clf = pipeline.named_steps["classifier"]
+        self.assertEqual(clf.class_weight, "balanced", "Classifier must be verified as using balanced class weights.")
 
     # 12. Prediction does not retrain model
     def test_prediction_uses_saved_model_without_retraining(self):

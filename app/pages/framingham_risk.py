@@ -106,10 +106,11 @@ def render_framingham_page() -> None:
 
         with c_dem3:
             educ_choice = st.selectbox(
-                "Educational Attainment (educ)",
+                "Educational Attainment (educ, Optional)",
                 options=list(VALID_EDUC_CHOICES.keys()),
-                index=1,  # Default to High School Diploma / GED
-                help="Highest completed level of formal schooling.",
+                index=None,
+                placeholder="-- Select or leave blank if unknown --",
+                help="Highest completed level of formal schooling (optional; imputed via mode if unselected).",
                 key="fram_educ",
             )
 
@@ -205,46 +206,52 @@ def render_framingham_page() -> None:
 
         with c_ant1:
             height_cm = st.number_input(
-                "Standing Height (cm)",
+                "Standing Height (cm, Optional)",
                 min_value=120.0,
                 max_value=230.0,
-                value=float(st.session_state.get("fram_ht", 170.0)),
+                value=float(st.session_state["fram_ht"]) if "fram_ht" in st.session_state else None,
                 step=0.5,
+                placeholder="e.g. 170 (optional)",
                 help="Height used to calculate Body Mass Index.",
                 key="fram_ht",
             )
             weight_kg = st.number_input(
-                "Body Weight (kg)",
+                "Body Weight (kg, Optional)",
                 min_value=30.0,
                 max_value=250.0,
-                value=float(st.session_state.get("fram_wt", 75.0)),
+                value=float(st.session_state["fram_wt"]) if "fram_wt" in st.session_state else None,
                 step=0.5,
+                placeholder="e.g. 75 (optional)",
                 help="Weight used to calculate Body Mass Index.",
                 key="fram_wt",
             )
 
-        computed_bmi = round(weight_kg / ((height_cm / 100.0) ** 2), 2)
+        computed_bmi = None
+        if height_cm and weight_kg:
+            computed_bmi = round(weight_kg / ((height_cm / 100.0) ** 2), 2)
 
         with c_ant2:
             bmi_input = st.number_input(
-                "Body Mass Index (BMI, kg/m²)",
+                "Body Mass Index (BMI, kg/m², Optional)",
                 min_value=12.0,
                 max_value=70.0,
-                value=float(st.session_state.get("fram_bmi", computed_bmi)),
+                value=float(st.session_state["fram_bmi"]) if "fram_bmi" in st.session_state else computed_bmi,
                 step=0.1,
                 format="%.1f",
-                help=f"Auto-calculated from height & weight ({computed_bmi} kg/m²), or can be entered directly.",
+                placeholder="e.g. 25.4 (leave blank if unmeasured)",
+                help=f"Calculated from height & weight ({computed_bmi} kg/m²) if provided, or leave blank for cohort median imputation.",
                 key="fram_bmi",
             )
 
         with c_ant3:
             heart_rate = st.number_input(
-                "Resting Heart Rate (HEARTRTE, bpm)",
+                "Resting Heart Rate (HEARTRTE, bpm, Optional)",
                 min_value=35.0,
                 max_value=180.0,
-                value=float(st.session_state.get("fram_hr", 72.0)),
+                value=float(st.session_state["fram_hr"]) if "fram_hr" in st.session_state else None,
                 step=1.0,
-                help="Resting ventricular rate in beats per minute.",
+                placeholder="e.g. 72 (leave blank if unmeasured)",
+                help="Resting ventricular rate in beats per minute (optional; imputed via cohort median if unmeasured).",
                 key="fram_hr",
             )
 
@@ -267,12 +274,13 @@ def render_framingham_page() -> None:
 
         with c_lab2:
             blood_glucose = st.number_input(
-                "Casual/Fasting Blood Glucose (GLUCOSE, mg/dL)",
+                "Casual/Fasting Blood Glucose (GLUCOSE, mg/dL, Optional)",
                 min_value=40.0,
                 max_value=500.0,
-                value=float(st.session_state.get("fram_glucose", 82.0)),
+                value=float(st.session_state["fram_glucose"]) if "fram_glucose" in st.session_state else None,
                 step=1.0,
-                help="Baseline serum glucose in mg/dL (missing values imputed via cohort median).",
+                placeholder="e.g. 82 (leave blank if unmeasured)",
+                help="Baseline serum glucose in mg/dL (optional; imputed via cohort median if unmeasured).",
                 key="fram_glucose",
             )
 
@@ -287,7 +295,7 @@ def render_framingham_page() -> None:
 
         st.markdown("<br>", unsafe_allow_html=True)
         submitted = st.form_submit_button(
-            "⚡ Compute 10-Year Incident CVD Risk",
+            "⚡ Compute Framingham Model Screening Score",
             type="primary",
             use_container_width=True,
         )
@@ -308,7 +316,7 @@ def render_framingham_page() -> None:
             "SEX": VALID_SEX_CHOICES.get(sex_choice) if sex_choice else None,
             "CURSMOKE": _map_binary(cur_smoke_choice),
             "CIGPDAY": cig_per_day,
-            "educ": VALID_EDUC_CHOICES.get(educ_choice, 2.0),
+            "educ": VALID_EDUC_CHOICES.get(educ_choice) if educ_choice else None,
             "BPMEDS": _map_binary(bp_meds_choice),
             "PREVHYP": _map_binary(prev_hyp_choice),
             "HEARTRTE": heart_rate,
@@ -331,7 +339,7 @@ def render_framingham_page() -> None:
 
         # Step 4: Model Inference
         try:
-            with st.spinner("Computing 10-year incident cardiovascular disease risk projection..."):
+            with st.spinner("Computing Framingham model screening score..."):
                 result = predict_framingham_risk(df_validated)
         except Exception as exc:
             logger.exception("Prediction failed during Framingham risk calculation")
@@ -343,9 +351,9 @@ def render_framingham_page() -> None:
 
         # 5. Results Presentation
         st.markdown("---")
-        st.markdown("### 📊 Framingham 10-Year CVD Risk Estimation Results")
+        st.markdown("### 📊 Framingham Model Screening Score Results")
 
-        score_pct = result["risk_score_pct"]
+        score_pct = result["screening_score_pct"]
         threshold_pct = result["operating_threshold_pct"]
         is_higher = result["is_higher_signal"]
 
@@ -359,8 +367,8 @@ def render_framingham_page() -> None:
                         ⚠️ {result['classification_label']}
                     </div>
                     <div style="font-size: 0.95rem; color: #7F1D1D; margin-top: 4px;">
-                        The submitted risk factor profile produces an estimated 10-year incident CVD score of
-                        <strong>{score_pct:.1f}%</strong>, which meets or exceeds the calibrated sensitivity threshold
+                        The submitted risk factor profile produces a <strong>Framingham Model Screening Score</strong> of
+                        <strong>{score_pct:.1f}%</strong>, which meets or exceeds the classification threshold
                         of <strong>{threshold_pct:.1f}%</strong>.
                     </div>
                 </div>
@@ -376,8 +384,8 @@ def render_framingham_page() -> None:
                         ✅ {result['classification_label']}
                     </div>
                     <div style="font-size: 0.95rem; color: #064E3B; margin-top: 4px;">
-                        The submitted risk factor profile produces an estimated 10-year incident CVD score of
-                        <strong>{score_pct:.1f}%</strong>, which remains below the calibrated sensitivity threshold
+                        The submitted risk factor profile produces a <strong>Framingham Model Screening Score</strong> of
+                        <strong>{score_pct:.1f}%</strong>, which remains below the classification threshold
                         of <strong>{threshold_pct:.1f}%</strong>.
                     </div>
                 </div>
@@ -388,16 +396,16 @@ def render_framingham_page() -> None:
         # Metric Summary Row
         c_res1, c_res2, c_res3, c_res4 = st.columns(4)
         c_res1.metric(
-            "Estimated 10-Year Score",
+            "Framingham Model Screening Score",
             f"{score_pct:.1f}%",
-            delta=f"{score_pct - threshold_pct:+.1f}% vs threshold",
+            delta=f"{score_pct - threshold_pct:+.1f}% vs cutoff",
             delta_color="inverse",
-            help="Model positive-class pseudo-probability for first incident hard CVD within 10 years",
+            help="Model-generated screening score for 10-year incident hard CVD. Note: Uses balanced class weighting; this is an internal model score, NOT a clinically calibrated absolute 10-year disease probability.",
         )
         c_res2.metric(
-            "Operating Threshold (τ*)",
+            "Operating Cutoff (τ*)",
             f"{threshold_pct:.1f}%",
-            help="Calibrated threshold targeting >= 80% sensitivity in primary prevention cohort",
+            help="Calibrated classification cutoff targeting >= 80% sensitivity in research benchmarking (not a clinical treatment threshold).",
         )
         c_res3.metric(
             "Test Sensitivity (τ*=0.40)",
@@ -411,10 +419,10 @@ def render_framingham_page() -> None:
         )
 
         # Visual Score Gauge Bar
-        st.markdown("**10-Year CVD Risk Score Relative to Operating Threshold:**")
+        st.markdown("**Framingham Model Screening Score Relative to Classification Cutoff:**")
         st.progress(min(1.0, max(0.0, score_pct / 100.0)))
         st.caption(
-            f"Estimated Score: {score_pct:.1f}% | Operating Threshold: {threshold_pct:.1f}% "
+            f"Screening Score: {score_pct:.1f}% | Classification Cutoff: {threshold_pct:.1f}% "
             f"({result['classification_label']})"
         )
 
@@ -431,15 +439,21 @@ def render_framingham_page() -> None:
             st.markdown(
                 r"""
                 - **What this means:** The submitted clinical covariate profile exhibits a constellation of vascular,
-                  metabolic, and demographic risk factors (e.g., elevated blood pressure, dyslipidemia, smoking, or age)
-                  statistically associated with a higher likelihood of experiencing a first incident hard cardiovascular event
-                  (myocardial infarction, coronary death, or stroke) over a 10-year follow-up horizon.
-                - **What this does NOT mean:** This score is **not an individualized clinical certainty**. It does not diagnose
-                  current coronary artery disease or guarantee a future adverse event.
+                  metabolic, and demographic risk factors statistically associated with an elevated likelihood of experiencing
+                  a first incident hard cardiovascular event (myocardial infarction, coronary death, or stroke) over a 10-year follow-up horizon.
+                - **What this does NOT mean:**
+                  1. **Not an Absolute Risk Probability:** This score is an internal **model-generated screening score**, *not* a
+                     clinically calibrated individual absolute-risk probability. The model was trained with balanced class weighting
+                     (`class_weight='balanced'`), which artificially shifts output scores upwards relative to population event rates (~9.26%).
+                  2. **Not a Clinical Replacement:** This tool is *not* a replacement for established, clinically validated cardiovascular risk
+                     calculators (such as the ACC/AHA Pooled Cohort Equations or official Framingham calculators).
+                  3. **Classification vs. Treatment Threshold:** The operating threshold ($\tau^* = 0.40$) is an **academic classification threshold**
+                     derived to achieve high sensitivity ($\ge 80\%$) in research benchmarking. It is **not a clinical treatment threshold** for initiating
+                     pharmacological therapy (such as statins or antihypertensives).
                 - **Recommended Actions:**
-                  1. Consult a board-certified primary care physician or cardiologist for comprehensive clinical cardiovascular risk evaluation.
+                  1. Consult a board-certified primary care physician or cardiologist for a formal clinical cardiovascular risk evaluation.
                   2. Obtain complete fasting lipid profile testing (Total Cholesterol, LDL-C, HDL-C, Triglycerides).
-                  3. Discuss clinically validated guideline risk estimators (such as the ACC/AHA Pooled Cohort Equations) and appropriate lifestyle or pharmacological primary-prevention interventions.
+                  3. Discuss clinically validated guideline risk estimators (such as the ACC/AHA Pooled Cohort Equations) and evidence-based preventive lifestyle management.
                 """
             )
         else:
@@ -447,8 +461,10 @@ def render_framingham_page() -> None:
                 r"""
                 - **What this means:** The submitted profile exhibits lower statistical resemblance to Framingham participants
                   who developed incident cardiovascular disease within 10 years under baseline surveillance.
-                - **What this does NOT mean:** This does **not imply zero risk** and does not guarantee immunity from cardiovascular disease.
-                  Cardiovascular risk increases progressively with age and cumulative atherogenic exposure.
+                - **What this does NOT mean:**
+                  1. **Not a Zero-Risk Guarantee:** This does **not imply zero risk** and does not guarantee immunity from cardiovascular disease.
+                     Cardiovascular risk increases progressively with age and cumulative atherogenic exposure.
+                  2. **Not a Clinical Diagnosis:** This is an internal model screening score, not a clinical diagnostic clearance.
                 - **Recommended Actions:** Maintain routine periodic clinical examinations, monitor blood pressure, adhere to a heart-healthy diet, and remain physically active.
                 """
             )
@@ -459,10 +475,13 @@ def render_framingham_page() -> None:
                 rf"""
                 - **Dataset Provenance:** Framingham Heart Study examination cohort ($N = 3,983$ evaluable primary prevention participants).
                 - **Target Definition:** `{result['target_definition']}` (`TARGET_10Y_CVD`).
-                - **Model Architecture:** Pre-trained Scikit-Learn L2-regularized `{result['estimator_class']}` (`models/framingham_risk.joblib`)
+                - **Model Architecture & Class Weighting:** Pre-trained Scikit-Learn L2-regularized `{result['estimator_class']}` (`models/framingham_risk.joblib`)
                   trained on the Standard BP feature configuration with `RobustScaler` applied to continuous variables.
+                  Because `class_weight='balanced'` was employed to address minority event prevalence (~9.26%), `predict_proba()` produces an internal screening metric
+                  rather than a clinically calibrated posterior probability.
                 - **Operating Threshold:** The decision cutoff ($\tau^* = {result['operating_threshold']:.2f}$) was calibrated strictly on
                   training-set 5-fold cross-validation out-of-fold predictions to prevent sensitivity collapse and achieve $\ge 80\%$ recall.
+                  It represents an **academic classification cutoff**, not a clinical treatment initiation threshold.
                 - **Held-Out Test Performance ($N = 797$, 74 events):**
                   - Test ROC-AUC: **{result['calibrated_test_roc_auc']:.4f}**
                   - Test Sensitivity: **{result['calibrated_test_sensitivity']*100:.1f}%**

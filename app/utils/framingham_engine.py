@@ -281,9 +281,9 @@ def predict_framingham_risk(
     # 4. Classification against frozen operating threshold
     is_higher_signal = bool(pos_prob >= threshold)
     classification_label = (
-        "Higher Risk Signal (Elevated 10-Year CVD Likelihood)"
+        "Higher Model Screening Signal"
         if is_higher_signal
-        else "Lower Risk Signal (Baseline 10-Year CVD Likelihood)"
+        else "Lower Model Screening Signal"
     )
 
     # Calibration benchmark metrics from Phase 2B test evaluation
@@ -300,6 +300,8 @@ def predict_framingham_risk(
         "model_key": "framingham_risk",
         "model_tier": "Model 2: Longitudinal Risk Engine (Standard BP 14)",
         "estimator_class": classifier.__class__.__name__,
+        "screening_score": round(pos_prob, 4),
+        "screening_score_pct": round(pos_prob * 100.0, 1),
         "risk_score": round(pos_prob, 4),
         "risk_score_pct": round(pos_prob * 100.0, 1),
         "negative_score_pct": round(neg_prob * 100.0, 1),

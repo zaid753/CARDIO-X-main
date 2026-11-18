@@ -152,19 +152,23 @@ The module automatically derives and displays key hemodynamic parameters:
 - **Mean Arterial Pressure (MAP):** $\text{DIABP} + (\text{PP} / 3)$ (indicator of systemic perfusion pressure).
 
 ### 6.6 Prediction Interpretation & Clinical Next Steps
-- **Higher Risk Signal (Score $\ge 0.40$):** The patient profile exhibits cardiovascular risk factor clustering statistically associated with higher risk of incident hard CVD within 10 years.
-- **Lower Risk Signal (Score $< 0.40$):** Score remains below the calibrated sensitivity cutoff.
+- **Framingham Model Screening Score:** A model-generated score estimating statistical resemblance to primary prevention participants who experienced incident hard CVD within 10 years. Because the estimator was trained with balanced class weighting (`class_weight='balanced'`), the output represents an internal screening score rather than a clinically calibrated absolute 10-year probability.
+- **Classification Signals:**
+  - **Higher Model Screening Signal (Score $\ge 0.40$):** The patient profile exhibits cardiovascular risk factor clustering statistically associated with elevated risk of incident hard CVD within 10 years.
+  - **Lower Model Screening Signal (Score $< 0.40$):** Score remains below the calibrated sensitivity cutoff.
+- **Operating Threshold vs. Treatment Cutoff:** The operating cutoff ($\tau^* = 0.40$) is an **academic classification threshold** derived to achieve high recall ($\ge 80\%$) in research benchmarking. It is **not a clinical treatment threshold** for medication initiation.
 - **Next-Step Guidance:** Emphasizes scheduling a clinical consultation with a physician, undergoing comprehensive formal cardiovascular risk assessment (e.g., ACC/AHA PCE, coronary artery calcium scoring, advanced lipid panels), and discussing individualized primary prevention strategies.
 
 ### 6.7 Academic Methodology & Limitations
 - **Landmark Classifier:** Evaluates individuals in a landmark primary prevention cohort with complete 10-year follow-up or prior event. It is **not** a competing-risk survival model.
+- **Not Calibrated Absolute Probability:** Output scores reflect balanced class weighting rather than population-calibrated posterior probabilities.
 - **Exclusion Criteria:** Excludes individuals with prior baseline cardiovascular disease, stroke, or transient ischemic attack.
 - **Not an Official Calculator:** This is an academic research prototype and is **not** a clinically validated replacement for the ACC/AHA Pooled Cohort Equations or official Framingham Risk Score calculators.
 
 ---
 
 ## 7. Verification and Reproducibility
-All 92 automated regression tests can be run at any time to verify system integrity:
+All 94 automated regression tests can be run at any time to verify system integrity:
 ```bash
 python -m pytest tests/ -v
 ```
