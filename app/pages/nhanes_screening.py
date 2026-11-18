@@ -243,7 +243,7 @@ def render_nhanes_page() -> None:
             bp_med_choice = st.radio(
                 "Prescribed Blood Pressure Medication",
                 options=["No", "Yes"],
-                index=0 if st.session_state.get("nhanes_bpmed", "No") == "No" else 1,
+                index=None,
                 help="Currently taking medication prescribed by a physician for high blood pressure.",
                 key="nhanes_bpmed",
             )
@@ -311,7 +311,7 @@ def render_nhanes_page() -> None:
             diabetes_choice = st.radio(
                 "Diagnosed Diabetes (Doctor-Reported)",
                 options=["No", "Yes"],
-                index=0,
+                index=None,
                 help="Ever informed by a doctor or health professional that you have diabetes.",
                 key="nhanes_diab",
             )
@@ -336,14 +336,14 @@ def render_nhanes_page() -> None:
             chd_choice = st.radio(
                 "Coronary Heart Disease (CHD) History",
                 options=["No", "Yes"],
-                index=0,
+                index=None,
                 help="Ever diagnosed with coronary heart disease.",
                 key="nhanes_chd",
             )
             stroke_choice = st.radio(
                 "Stroke History",
                 options=["No", "Yes"],
-                index=0,
+                index=None,
                 help="Ever diagnosed with a stroke.",
                 key="nhanes_stroke",
             )
@@ -379,17 +379,17 @@ def render_nhanes_page() -> None:
             "avg_diastolic_bp_mmhg": diastolic_bp,
             "pulse_pressure_mmhg": computed_pp,
             "avg_pulse_bpm": resting_pulse,
-            "bp_medication": 1.0 if bp_med_choice == "Yes" else 0.0,
+            "bp_medication": 1.0 if bp_med_choice == "Yes" else (0.0 if bp_med_choice == "No" else None),
             "smoking_status": smoke_map.get(smoking_choice, "never"),
             "total_ltp_met_minutes_week": ltp_mets,
             "sedentary_minutes_day": sedentary_mins,
             "alcohol_drinks_per_week": alcohol_drinks,
             "sleep_hours_weekday": sleep_hours,
-            "diabetes_diagnosed": 1.0 if diabetes_choice == "Yes" else 0.0,
+            "diabetes_diagnosed": 1.0 if diabetes_choice == "Yes" else (0.0 if diabetes_choice == "No" else None),
             "general_health": VALID_GENERAL_HEALTH_CHOICES.get(gen_health_choice, 3.0),
             "phq9_score": phq9_score,
-            "coronary_heart_disease": 1.0 if chd_choice == "Yes" else 0.0,
-            "stroke": 1.0 if stroke_choice == "Yes" else 0.0,
+            "coronary_heart_disease": 1.0 if chd_choice == "Yes" else (0.0 if chd_choice == "No" else None),
+            "stroke": 1.0 if stroke_choice == "Yes" else (0.0 if stroke_choice == "No" else None),
         }
 
         # Step 3: Input Validation

@@ -258,6 +258,19 @@ class TestNHANESInteractiveScreening(unittest.TestCase):
             predict_nhanes_screening(bad_df)
         self.assertIn("missing required predictor columns", str(ctx.exception))
 
+    def test_unanswered_binary_fields_rejected_without_defaulting_to_no(self):
+        """Verify unanswered binary fields (None) fail validation and do not silently default to 0.0."""
+        binary_fields = ["bp_medication", "diabetes_diagnosed", "coronary_heart_disease", "stroke"]
+        for b_field in binary_fields:
+            payload = self.valid_payload.copy()
+            payload[b_field] = None  # User left radio unselected
+            is_valid, errors, _ = validate_nhanes_inputs(payload)
+            self.assertFalse(is_valid, f"Validation should fail when '{b_field}' is None")
+            self.assertTrue(
+                any(b_field in err for err in errors),
+                f"Error message must explicitly mention unselected field '{b_field}': {errors}"
+            )
+
     def test_all_application_pages_import_cleanly(self):
         """Verify all page renderers import and are callable."""
         self.assertTrue(callable(render_nhanes_page))

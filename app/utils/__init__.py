@@ -11,6 +11,11 @@ from app.utils.screening_engine import (
     validate_nhanes_inputs,
     predict_nhanes_screening,
 )
+from app.utils.framingham_engine import (
+    FRAMINGHAM_CORE_PREDICTORS,
+    validate_framingham_inputs,
+    predict_framingham_risk,
+)
 
 __all__ = [
     "load_model_metadata",
@@ -21,4 +26,7 @@ __all__ = [
     "NHANES_CORE_PREDICTORS",
     "validate_nhanes_inputs",
     "predict_nhanes_screening",
+    "FRAMINGHAM_CORE_PREDICTORS",
+    "validate_framingham_inputs",
+    "predict_framingham_risk",
 ]

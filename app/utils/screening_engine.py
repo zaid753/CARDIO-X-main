@@ -187,6 +187,9 @@ def validate_nhanes_inputs(
     binary_cols = ["bp_medication", "diabetes_diagnosed", "coronary_heart_disease", "stroke"]
     for b_col in binary_cols:
         val = form_data.get(b_col)
+        if val is None or pd.isna(val) or val == "":
+            errors.append(f"Field '{b_col}' is required. Please explicitly select Yes or No.")
+            continue
         try:
             val_float = float(val)
             if val_float not in (0.0, 1.0):
